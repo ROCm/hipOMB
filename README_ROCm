@@ -1,0 +1,15 @@
+Building with ROCm
+==================
+
+    autoreconf -ivf
+    ./configure CC=/path/to/mpicc
+                CXX=/path/to/mpicxx
+                --enable-rocm
+                --with-rocm=/opt/rocm
+    make
+    make install
+
+Running with ROCm
+=================
+
+    mpirun -np 2 -hostfile hostfile osu_latency -d rocm D D
