@@ -38,6 +38,9 @@ print_header(int rank, int full)
                     case OPENACC:
                         printf(benchmark_header, "-OPENACC");
                         break;
+                    case ROCM:
+                        printf(benchmark_header, "-ROCM");
+                        break;
                     default:
                         printf(benchmark_header, "");
                         break;
@@ -46,6 +49,7 @@ print_header(int rank, int full)
                 switch (options.accel) {
                     case CUDA:
                     case OPENACC:
+                    case ROCM:
                         fprintf(stdout, "# Send Buffer on %s and Receive Buffer on %s\n",
                                'M' == options.src ? "MANAGED (M)" : ('D' == options.src ? "DEVICE (D)" : "HOST (H)"),
                                'M' == options.dst ? "MANAGED (M)" : ('D' == options.dst ? "DEVICE (D)" : "HOST (H)"));
@@ -310,7 +314,7 @@ void set_benchmark_name (const char * name)
 
 void enable_accel_support (void)
 {
-    accel_enabled = (CUDA_ENABLED || OPENACC_ENABLED);
+    accel_enabled = (CUDA_ENABLED || OPENACC_ENABLED || ROCM_ENABLED);
 }
 
 int process_options (int argc, char *argv[])
@@ -577,6 +581,15 @@ int process_options (int argc, char *argv[])
                     } else {
                         bad_usage.message = "OpenACC Support Not Enabled\n"
                                 "Please recompile benchmark with OpenACC support";
+                        bad_usage.optarg = optarg;
+                        return PO_BAD_USAGE;
+                    }
+                } else if (0 == strncasecmp(optarg, "rocm", 10)) {
+                    if (ROCM_ENABLED) {
+                        options.accel = ROCM;
+                    } else {
+                        bad_usage.message = "ROCM Support Not Enabled\n"
+                                "Please recompile benchmark with ROCM support";
                         bad_usage.optarg = optarg;
                         return PO_BAD_USAGE;
                     }

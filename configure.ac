@@ -53,6 +53,23 @@ AC_ARG_WITH([cuda-libpath],
                      [LDFLAGS="-L$with_cuda_libpath -Wl,-rpath=$with_cuda_libpath $LDFLAGS"])
             ])
 
+AC_ARG_ENABLE([rocm],
+              [AS_HELP_STRING([--enable-rocm],
+			                  [Enable ROCm benchmarks])
+              ],
+              [],
+              [enable_rocm=no])
+
+AC_ARG_WITH([rocm],
+            [AS_HELP_STRING([--with-rocm=@<:@ROCm installation path@:>@],
+                            [Provide path to ROCm installation])
+            ],
+            [AS_CASE([$with_rocm],
+                     [yes|no], [],
+                     [CPPFLAGS="-I$with_rocm/include $CPPFLAGS"
+                      LDFLAGS="-L$with_rocm/lib64 -Wl,-rpath=$with_rocm/lib64 -L$with_rocm/lib -Wl,-rpath=$with_rocm/lib -lhip_hcc $LDFLAGS"])
+            ])
+
 # Checks for programs.
 AC_PROG_CC([mpicc oshcc upcc upc++])
 
@@ -104,6 +121,15 @@ AS_IF([test "x$enable_openacc" = xyes], [
        AC_DEFINE([_ENABLE_OPENACC_], [1], [Enable OpenACC])
        ])
 
+AS_IF([test "x$enable_rocm" = xyes], [
+       AC_DEFINE([__HIP_PLATFORM_HCC__])
+       AC_CHECK_HEADERS([hip/hip_runtime_api.h], [],
+                        [AC_MSG_ERROR([cannot include hip/hip_runtime_api.h])])
+       AC_SEARCH_LIBS([hipFree], [hip_hcc], [],
+                      [AC_MSG_ERROR([cannot link with -lhip_hcc])])
+       AC_DEFINE([_ENABLE_ROCM_], [1], [Enable ROCm])
+       ])
+
 AS_CASE([$enable_cuda],
         [yes], [build_cuda_kernels=yes; build_cuda=yes],
         [basic], [build_cuda=yes])
@@ -130,6 +156,7 @@ AM_CONDITIONAL([MPI3_LIBRARY], [test x$mpi3_library = xtrue])
 AM_CONDITIONAL([CUDA], [test x$build_cuda = xyes])
 AM_CONDITIONAL([CUDA_KERNELS], [test x$build_cuda_kernels = xyes])
 AM_CONDITIONAL([OPENACC], [test x$enable_openacc = xyes])
+AM_CONDITIONAL([ROCM], [test x$enable_rocm = xyes])
 AM_CONDITIONAL([OSHM], [test x$oshm_library = xtrue])
 AM_CONDITIONAL([MPI], [test x$mpi_library = xtrue])
 AM_CONDITIONAL([UPC], [test x$upc_compiler = xtrue])

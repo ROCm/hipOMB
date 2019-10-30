@@ -62,6 +62,13 @@
 #   define CUDA_KERNEL_ENABLED 0
 #endif
 
+#ifdef _ENABLE_ROCM_
+#   define ROCM_ENABLED 1
+#   include "hip/hip_runtime.h"
+#else
+#   define ROCM_ENABLED 0
+#endif
+
 #ifndef BENCHMARK
 #   define BENCHMARK "MPI%s BENCHMARK NAME UNSET"
 #endif
@@ -101,6 +108,19 @@ do {                                                                    \
        exit(EXIT_FAILURE);                                              \
    }                                                                    \
    assert(cudaSuccess == errno);                                        \
+} while (0)
+#endif
+
+#if defined(_ENABLE_ROCM_)
+#define ROCM_CHECK(stmt)                                                \
+do {                                                                    \
+   hipError_t errno = (stmt);                                           \
+   if (0 != errno) {                                                    \
+       fprintf(stderr, "[%s:%d] ROCM call '%s' failed with %d: %s \n",  \
+        __FILE__, __LINE__, #stmt, errno, hipGetErrorString(errno));    \
+       exit(EXIT_FAILURE);                                              \
+   }                                                                    \
+   assert(hipSuccess == errno);                                         \
 } while (0)
 #endif
 
@@ -175,7 +195,8 @@ enum accel_type {
     NONE,
     CUDA,
     OPENACC,
-    MANAGED
+    MANAGED,
+    ROCM
 };
 
 enum target_type {
