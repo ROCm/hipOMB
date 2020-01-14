@@ -61,6 +61,12 @@ static int is_alloc = 0;
 static float *d_x, *d_y;
 #endif
 
+void* align(void* buf, size_t alignment)
+{
+    uintptr_t u = (uintptr_t) buf;
+    return (void*)(((u) + (alignment) - 1) & ~((alignment) - 1));
+}
+
 void set_device_memory (void * ptr, int data, size_t size)
 {
 #ifdef _ENABLE_OPENACC_
@@ -838,6 +844,8 @@ int allocate_memory_coll (void ** buffer, size_t size, enum accel_type type)
 
 int allocate_device_buffer (char ** buffer)
 {
+    unsigned long align_size = sysconf(_SC_PAGESIZE);
+
     switch (options.accel) {
 #ifdef _ENABLE_CUDA_
         case CUDA:
@@ -855,7 +863,8 @@ int allocate_device_buffer (char ** buffer)
 #endif
 #ifdef _ENABLE_ROCM_
         case ROCM:
-             ROCM_CHECK(hipMalloc((void **)buffer, options.max_message_size));
+             ROCM_CHECK(hipMalloc((void **)buffer, options.max_message_size + align_size));
+             *buffer = align(*buffer, align_size);
             break;
 #endif
         default:
@@ -1173,6 +1182,8 @@ int omb_get_local_rank()
     if ((str = getenv("MV2_COMM_WORLD_LOCAL_RANK")) != NULL) {
         local_rank = atoi(str);
     } else if ((str = getenv("OMPI_COMM_WORLD_LOCAL_RANK")) != NULL) {
+        local_rank = atoi(str);
+    } else if ((str = getenv("MPI_LOCALRANKID")) != NULL) {
         local_rank = atoi(str);
     } else if ((str = getenv("LOCAL_RANK")) != NULL) {
         local_rank = atoi(str);
