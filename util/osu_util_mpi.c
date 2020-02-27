@@ -1174,6 +1174,8 @@ int omb_get_local_rank()
         local_rank = atoi(str);
     } else if ((str = getenv("OMPI_COMM_WORLD_LOCAL_RANK")) != NULL) {
         local_rank = atoi(str);
+    } else if ((str = getenv("MPI_LOCALRANKID")) != NULL) {
+        local_rank = atoi(str);
     } else if ((str = getenv("LOCAL_RANK")) != NULL) {
         local_rank = atoi(str);
     } else {
